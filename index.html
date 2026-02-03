@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>MONSTER APE: Neon Runner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #050608;
+      --accent: #f5ff3b;
+      --accent2: #ff3bf5;
+      --text: #f5f5f5;
+      --muted: #9a9a9a;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Inter", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: radial-gradient(circle at top, #151821 0, #050608 55%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 900px;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .logo {
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .game-container {
+      position: relative;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: radial-gradient(circle at top, #151821, #050608);
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: radial-gradient(circle at center, #050608, #000);
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(5, 6, 8, 0.8);
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .score {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .score span {
+      color: var(--accent);
+    }
+
+    .btn {
+      pointer-events: auto;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(5, 6, 8, 0.9);
+      color: var(--text);
+      padding: 8px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      cursor: pointer;
+      transition: 0.2s ease-out;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .center-message {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .message-box {
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: rgba(5, 6, 8, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      max-width: 260px;
+    }
+
+    .message-box h2 {
+      font-size: 16px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .message-box p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .message-box span {
+      color: var(--accent);
+    }
+
+    .controls {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    @media (max-width: 600px) {
+      .wrapper {
+        padding: 10px;
+      }
+      .subtitle {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo">MONSTER <span>APE</span></div>
+      <div class="subtitle">NEON RUNNER / GITHUB EDITION</div>
+    </div>
+
+    <div class="game-container">
+      <canvas id="gameCanvas" width="800" height="450"></canvas>
+      <div class="hud">
+        <div class="hud-top">
+          <div class="badge">Avoid obstacles / Collect orbs</div>
+          <div class="score">Score: <span id="score">0</span></div>
+        </div>
+        <div class="hud-bottom">
+          <div class="controls">A / ← = left · D / → = right · Space = restart</div>
+          <button class="btn" id="startBtn">Start / Restart</button>
+        </div>
+      </div>
+      <div class="center-message" id="centerMessage">
+        <div class="message-box">
+          <h2>NEON RUNNER</h2>
+          <p>Ухиляйся від червоних блоків, збирай <span>неонові орби</span> і тримайся якомога довше.</p>
+          <p>Керування: A / D або ← / →</p>
+          <p>Натисни <span>Start</span>, щоб почати.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("score");
+    const startBtn = document.getElementById("startBtn");
+    const centerMessage = document.getElementById("centerMessage");
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    let player;
+    let obstacles;
+    let orbs;
+    let keys;
+    let score;
+    let gameOver;
+    let lastTime;
+    let spawnTimerObs;
+    let spawnTimerOrb;
+
+    function resetGame() {
+      player = {
+        x: W / 2,
+        y: H - 80,
+        w: 40,
+        h: 40,
+        speed: 6,
+      };
+
+      obstacles = [];
+      orbs = [];
+      keys = {};
+      score = 0;
+      gameOver = false;
+      lastTime = 0;
+      spawnTimerObs = 0;
+      spawnTimerOrb = 0;
+      scoreEl.textContent = "0";
+      centerMessage.style.display = "none";
+    }
+
+    function spawnObstacle() {
+      const width = 40 + Math.random() * 60;
+      const x = Math.random() * (W - width);
+      const speed = 3 + Math.random() * 3;
+      obstacles.push({
+        x,
+        y: -40,
+        w: width,
+        h: 20,
+        speed,
+      });
+    }
+
+    function spawnOrb() {
+      const x = 40 + Math.random() * (W - 80);
+      const speed = 2.5 + Math.random() * 2;
+      orbs.push({
+        x,
+        y: -20,
+        r: 10,
+        speed,
+        collected: false,
+      });
+    }
+
+    function update(dt) {
+      if (gameOver) return;
+
+      // Player movement
+      if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
+        player.x -= player.speed;
+      }
+      if (keys["ArrowRight"] || keys["d"] || keys["D"]) {
+        player.x += player.speed;
+      }
+      player.x = Math.max(player.w / 2, Math.min(W - player.w / 2, player.x));
+
+      // Spawn timers
+      spawnTimerObs += dt;
+      spawnTimerOrb += dt;
+
+      if (spawnTimerObs > 700) {
+        spawnObstacle();
+        spawnTimerObs = 0;
+      }
+
+      if (spawnTimerOrb > 1200) {
+        spawnOrb();
+        spawnTimerOrb = 0;
+      }
+
+      // Update obstacles
+      obstacles.forEach((o) => {
+        o.y += o.speed;
+      });
+      obstacles = obstacles.filter((o) => o.y < H + 40);
+
+      // Update orbs
+      orbs.forEach((orb) => {
+        orb.y += orb.speed;
+      });
+      orbs = orbs.filter((orb) => orb.y < H + 40 && !orb.collected);
+
+      // Collision detection
+      obstacles.forEach((o) => {
+        if (
+          player.x + player.w / 2 > o.x &&
+          player.x - player.w / 2 < o.x + o.w &&
+          player.y + player.h / 2 > o.y &&
+          player.y - player.h / 2 < o.y + o.h
+        ) {
+          gameOver = true;
+          showGameOver();
+        }
+      });
+
+      orbs.forEach((orb) => {
+        const dx = player.x - orb.x;
+        const dy = player.y - orb.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < orb.r + player.w / 2 && !orb.collected) {
+          orb.collected = true;
+          score += 10;
+          scoreEl.textContent = score;
+        }
+      });
+
+      // Passive score
+      score += dt * 0.005;
+      scoreEl.textContent = Math.floor(score);
+    }
+
+    function drawBackground(time) {
+      ctx.save();
+      ctx.fillStyle = "#050608";
+      ctx.fillRect(0, 0, W, H);
+
+      // Neon grid
+      const gridSize = 40;
+      const offset = (time * 0.05) % gridSize;
+
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+
+      for (let x = -gridSize; x < W + gridSize; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x + offset, 0);
+        ctx.lineTo(x + offset, H);
+        ctx.stroke();
+      }
+
+      for (let y = -gridSize; y < H + gridSize; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + offset);
+        ctx.lineTo(W, y + offset);
+        ctx.stroke();
+      }
+
+      // Glow circle
+      const gradient = ctx.createRadialGradient(
+        W / 2,
+        H,
+        0,
+        W / 2,
+        H,
+        H * 0.9
+      );
+      gradient.addColorStop(0, "rgba(245,255,59,0.25)");
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.restore();
+    }
+
+    function drawPlayer(time) {
+      ctx.save();
+      const pulse = 0.9 + Math.sin(time * 0.005) * 0.1;
+      const sizeW = player.w * pulse;
+      const sizeH = player.h * pulse;
+
+      // Glow
+      const gradient = ctx.createRadialGradient(
+        player.x,
+        player.y,
+        0,
+        player.x,
+        player.y,
+        60
+      );
+      gradient.addColorStop(0, "rgba(245,255,59,0.5)");
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(player.x - 80, player.y - 80, 160, 160);
+
+      // Body
+      ctx.translate(player.x, player.y);
+      ctx.fillStyle = "#050608";
+      ctx.strokeStyle = "rgba(245,255,59,0.9)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-sizeW / 2, -sizeH / 2, sizeW, sizeH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Eyes
+      ctx.fillStyle = "#f5ff3b";
+      ctx.beginPath();
+      ctx.arc(-8, -4, 4, 0, Math.PI * 2);
+      ctx.arc(8, -4, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mouth
+      ctx.strokeStyle = "rgba(245,255,59,0.7)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-10, 8);
+      ctx.lineTo(10, 8);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawObstacles() {
+      ctx.save();
+      obstacles.forEach((o) => {
+        const gradient = ctx.createLinearGradient(o.x, o.y, o.x, o.y + o.h);
+        gradient.addColorStop(0, "rgba(255,59,120,0.9)");
+        gradient.addColorStop(1, "rgba(255,59,120,0.4)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(o.x, o.y, o.w, o.h);
+      });
+      ctx.restore();
+    }
+
+    function drawOrbs(time) {
+      ctx.save();
+      orbs.forEach((orb) => {
+        const pulse = 0.8 + Math.sin(time * 0.01 + orb.x) * 0.2;
+        const r = orb.r * pulse;
+
+        const gradient = ctx.createRadialGradient(
+          orb.x,
+          orb.y,
+          0,
+          orb.x,
+          orb.y,
+          r * 2
+        );
+        gradient.addColorStop(0, "rgba(120,255,200,0.9)");
+        gradient.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(orb.x - r * 2, orb.y - r * 2, r * 4, r * 4);
+
+        ctx.fillStyle = "#78ffc8";
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function showGameOver() {
+      centerMessage.style.display = "flex";
+      centerMessage.querySelector("h2").textContent = "GAME OVER";
+      centerMessage.querySelector("p").innerHTML =
+        'Твій рахунок: <span>' + Math.floor(score) + "</span><br>Натисни Start або Space, щоб спробувати ще раз.";
+    }
+
+    function loop(timestamp) {
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+
+      update(dt);
+      drawBackground(timestamp);
+      drawObstacles();
+      drawOrbs(timestamp);
+      drawPlayer(timestamp);
+
+      requestAnimationFrame(loop);
+    }
+
+    // Input
+    window.addEventListener("keydown", (e) => {
+      keys[e.key] = true;
+      if (e.key === " " && gameOver) {
+        resetGame();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      keys[e.key] = false;
+    });
+
+    startBtn.addEventListener("click", () => {
+      resetGame();
+    });
+
+    // Init
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
